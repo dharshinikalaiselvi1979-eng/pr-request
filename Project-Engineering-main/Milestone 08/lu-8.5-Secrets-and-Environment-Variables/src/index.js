@@ -2,6 +2,7 @@
 // NoteVault API — Express Server Entry Point
 
 require("dotenv").config();
+
 const express = require("express");
 const cors = require("cors");
 
@@ -14,13 +15,34 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 // ============================================================
-// BUG: There is NO validateEnv() function here.
-// The server starts WITHOUT checking if critical environment
-// variables (DATABASE_URL, JWT_SECRET) are defined.
-// In production, this means the app boots, seems "fine",
-// and then crashes on the FIRST database or auth request —
-// making it much harder to debug than a clean startup error.
+// FIX: Validate required environment variables before
+// starting the server.
 // ============================================================
+
+function validateEnv() {
+  const requiredEnvVars = ["DATABASE_URL", "JWT_SECRET"];
+
+  const missingVars = requiredEnvVars.filter(
+    (envVar) => !process.env[envVar]
+  );
+
+  if (missingVars.length > 0) {
+    console.error("❌ Missing required environment variables:");
+
+    missingVars.forEach((envVar) => {
+      console.error(`- ${envVar}`);
+    });
+
+    console.error(
+      "\n🛑 Server startup aborted due to missing configuration."
+    );
+
+    process.exit(1);
+  }
+}
+
+// Run validation BEFORE app starts
+validateEnv();
 
 // Middleware
 app.use(cors());
@@ -43,7 +65,10 @@ app.get("/", (req, res) => {
 // Global error handler
 app.use((err, req, res, next) => {
   console.error("Unhandled error:", err);
-  res.status(500).json({ error: "Internal server error." });
+
+  res.status(500).json({
+    error: "Internal server error.",
+  });
 });
 
 // Start the server
