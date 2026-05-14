@@ -22,9 +22,9 @@ const ScoresPage = () => {
     fetchScores();
   }, []);
 
-  const handleDelete = (id) => {
-    setScores(prev => prev.filter(s => s.id !== id));
-  };
+const handleDelete = useCallback((id) => {
+  setScores((prev) => prev.filter((s) => s.id !== id));
+}, []);
 
   return (
     <div className="app-container">
