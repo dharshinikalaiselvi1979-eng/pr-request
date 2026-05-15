@@ -1,0 +1,194 @@
+Movie Quote API Load Testing
+
+This project demonstrates how to perform API performance testing using Artillery on a Node.js + Express backend.
+The goal is to compare the performance of:
+
+An unpaginated endpoint returning 1,000 movie quotes
+A paginated endpoint returning 20 quotes per request
+A POST endpoint for saving favorite quotes
+
+The assignment focuses on understanding:
+
+Load testing fundamentals
+Pagination performance benefits
+Response time metrics (median & p95)
+Throughput and concurrency
+Detecting implementation/performance issues under load
+Tech Stack
+Node.js
+Express.js
+Artillery
+REST API
+Project Structure
+.
+├── load-test.yml
+├── LOAD_TEST.md
+├── Changes.md
+├── package.json
+└── src/
+API Endpoints
+1. Get All Quotes (Unpaginated)
+GET /api/quotes/unpaginated
+
+Returns all 1,000 movie quotes in a single response.
+
+Characteristics
+Large payload (~200–300 KB)
+Higher memory usage
+Slower under concurrency
+2. Get Paginated Quotes
+GET /api/quotes?page=1&limit=20
+
+Returns only 20 quotes with pagination metadata.
+
+Response Includes
+currentPage
+totalPages
+total
+hasNextPage
+hasPrevPage
+Characteristics
+Small payload
+Faster response times
+Better scalability
+3. Add to Favorites
+POST /api/favorites
+Request Body
+{
+  "quoteId": 1
+}
+
+Simulates storing a favorite quote.
+
+Setup Instructions
+1. Clone the Repository
+git clone <your-repo-url>
+cd <project-folder>
+2. Install Dependencies
+npm install
+3. Run the Backend
+npm run dev
+
+Server runs on:
+
+http://localhost:3001
+Manual Endpoint Testing
+
+Before running load tests, manually test the endpoints.
+
+Test Unpaginated Endpoint
+curl -w "\nTime: %{time_total}s\nSize: %{size_download} bytes\n" \
+http://localhost:3001/api/quotes/unpaginated
+Test Paginated Endpoint
+curl -w "\nTime: %{time_total}s\nSize: %{size_download} bytes\n" \
+"http://localhost:3001/api/quotes?page=1&limit=20"
+Test POST Endpoint
+curl -X POST http://localhost:3001/api/favorites \
+-H "Content-Type: application/json" \
+-d '{"quoteId":1}'
+Installing Artillery
+
+Install Artillery globally:
+
+npm install -g artillery
+
+Verify installation:
+
+artillery version
+Load Test Configuration
+
+Create a file named:
+
+load-test.yml
+
+Example configuration:
+
+config:
+  target: "http://localhost:3001"
+
+  phases:
+    - duration: 30
+      arrivalRate: 50
+      rampTo: 50
+      name: "Ramp up to 50 users"
+
+scenarios:
+  - name: "Get all quotes (unpaginated)"
+    flow:
+      - get:
+          url: "/api/quotes/unpaginated"
+
+  - name: "Get paginated quotes"
+    flow:
+      - get:
+          url: "/api/quotes?page=1&limit=20"
+
+  - name: "Add to favorites"
+    flow:
+      - post:
+          url: "/api/favorites"
+          json:
+            quoteId: 1
+Running the Load Test
+
+Execute:
+
+artillery run load-test.yml
+Important Metrics
+Median Response Time
+50% of requests are faster than this value
+Gives a general performance overview
+p95 Response Time
+95% of requests complete within this time
+Represents the slowest user experiences
+Most important metric for scalability analysis
+Throughput
+
+Measured in:
+
+requests/second
+
+Shows how many requests the server can handle.
+
+Error Rate
+
+Percentage of failed requests:
+
+500 errors
+timeouts
+failed responses
+
+High error rates indicate server overload.
+
+Expected Findings
+Unpaginated Endpoint
+
+Expected to show:
+
+Higher response times
+Increased memory usage
+Lower throughput
+Worse p95 latency
+
+Because the server returns all 1,000 quotes in one response.
+
+Paginated Endpoint
+
+Expected to show:
+
+Lower response times
+Better throughput
+Smaller payload sizes
+Improved scalability
+
+Because only 20 records are transferred per request.
+
+Hidden Issues You May Discover
+
+The starter project intentionally contains performance and implementation issues such as:
+
+Missing CORS handling
+Chunked transfer problems
+Pagination off-by-one errors
+Synchronous blocking operations
+Missing input validation
